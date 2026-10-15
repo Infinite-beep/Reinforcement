@@ -31,6 +31,7 @@ print(V)
 
 # Actions: 0: Up, 1: Right, 2: Down, 3: Left
 actions = [0, 1, 2, 3]
+action_probability = 0.25  # Uniform random policy pi(a|s) = 1/4 for all actions
 
 def get_next_state_and_reward(state, action):
     # Define Environment dynamics: p(s', r | s, a)
@@ -56,6 +57,48 @@ def get_next_state_and_reward(state, action):
 
     # Convert 2D coordinates back to 1D state
     next_state = row * 4 + col
-    reward = -1  # Default reward for each step
+    reward = -1.0  # Default reward for each step. 
+    # why is reward -1: because we want to encourage the agent to reach the terminal states as quickly as possible, 
+    # so we penalize each step taken.
+    
 
     return next_state, reward
+
+iteration = 0
+while True:
+    delta = 0 # Initialize max change for this iteration
+
+    for s in range(number_states):
+        if s in terminal_states:
+            continue  # Skip terminal states
+
+        #store the old value to measure the change
+        v_old = V[s]
+        expected_value = 0
+
+        #sum over all actions under the uniform random policy
+        for a in actions:
+            next_state, reward = get_next_state_and_reward(s, a)
+            #In-place update uses newly computed values immediately
+            expected_value += action_probability * (reward + gamma * V[next_state])
+
+        #Overwrite the value function with the new estimate
+        V[s] = expected_value
+
+        # Update the maximum change observed in this iteration
+        delta = max(delta, abs(v_old - V[s]))\
+
+    iteration += 1
+
+    #Check  stopping criterion:halt when delta falls below theta
+    if delta < theta:
+        break
+
+    #-- Display Results ---
+    print(f"Policy evaluation converged after {iteration} iterations.\n")
+    print("Final Estimated State-Value Function V(s):")
+    print(np.reshape(V, (4, 4)), 1)
+
+    
+
+
